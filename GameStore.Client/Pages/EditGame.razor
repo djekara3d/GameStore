@@ -1,0 +1,123 @@
+﻿@page "/game"
+@page "/game/{id:int}"
+
+@using Models
+@inject NavigationManager NavigationManager
+
+
+
+
+<PageTitle>@title</PageTitle>
+
+    <h1>Game Catalog</h1>
+    <h3>@title</h3>
+
+
+@if (gameEdit is null)
+{
+    <p><em>Loading...</em></p>
+}
+
+else
+{
+    <div class="row">
+        <div class="col-sm-4 ">
+            <EditForm Model="@gameEdit" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name:</label>
+                    <InputText id="name" @bind-Value="gameEdit.Name" class="form-control"></InputText>
+                </div>
+                <div class="mb-3">
+                    <label for="genre" class="form-label">Genre:</label>
+                    <InputSelect id="genre" @bind-Value="gameEdit.Genre" class="form-select">
+                        <option value="">Select genre</option>
+                        <option value="Fighting">Fighting</option>
+                        <option value="Kids and Family">Kids and Family</option>
+                        <option value="Racing">Racing</option>
+                        <option value="Fighting">Roleplaying</option>
+                        <option value="Sports">Sports</option>
+                    </InputSelect>
+                </div>
+                <div class="mb-3">
+                    <label for="price" class="form-label">Price:</label>
+                    <InputNumber id="price" @bind-Value="gameEdit.Price" class="form-control"></InputNumber>
+                </div>
+                <div class="mb-3">
+                    <label for="date" class="form-label">Date:</label>
+                    <InputDate id="date" @bind-Value="gameEdit.ReleaseDate" class="form-control"></InputDate>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="submit" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+
+
+
+
+
+
+
+@code {
+
+    [Parameter]
+    public int? id { get; set; }
+    private string title = string.Empty;
+
+    private Game? gameEdit; //Object ce biti inicijalizovan u meotdi OnParametersSet
+
+    protected override void OnParametersSet() //Ukoliko parametri dodju od razor componente {id:int}
+    {
+        if (id is not null)
+        {
+            Game foundGame = GameClient.GetGame(id.Value);
+            gameEdit = new()
+                {
+                    Id = foundGame.Id,
+                    Name = foundGame.Name,
+                    Genre = foundGame.Genre,
+                    Price = foundGame.Price,
+                    ReleaseDate = foundGame.ReleaseDate
+                }; //pravimo novi game object jer glavni game object bindovan u formi i ukoliko bi uzimali njega to bi znacilo da
+               //direktno menjamo objekat bez opcije savea.
+            title = $"Edit {gameEdit.Name}";
+        }
+        else
+        {
+            gameEdit = new()
+                {
+                    Name = string.Empty,
+                    Genre = string.Empty,
+                    ReleaseDate = DateTime.Now
+                };
+            title = $"New Game";
+        }
+
+        base.OnParametersSet();
+    }
+
+    private void HandleSubmit()
+    {
+        if (gameEdit!.Id == 0)
+        {
+            GameClient.AddGame(gameEdit);
+        }
+        else
+        {
+            GameClient.UpdateGame(gameEdit); //Po defaultu int je 0, else uslovu onParametersSet
+        }
+
+        NavigationManager.NavigateTo("/");
+    }
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+
+
+}
